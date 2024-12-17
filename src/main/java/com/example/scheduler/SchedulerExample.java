@@ -1,36 +1,43 @@
 package com.example.scheduler;
 
 import com.ibm.websphere.scheduler.Scheduler;
+import com.ibm.websphere.scheduler.MessageTaskInfo;
+import com.ibm.websphere.scheduler.TaskInfoInvalid;
+
 import javax.naming.InitialContext;
-import javax.naming.NamingException;
-import java.util.Date;
-import java.util.Properties;
+import java.util.Hashtable;
 
 public class SchedulerExample {
     public static void main(String[] args) {
         try {
-            // Set up initial context
-            Properties props = new Properties();
-            props.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY, "com.ibm.websphere.naming.WsnInitialContextFactory");
-            InitialContext ctx = new InitialContext(props);
+            // Step 1: Set up JNDI properties
+            Hashtable<String, String> jndiProps = new Hashtable<>();
+            jndiProps.put(javax.naming.Context.INITIAL_CONTEXT_FACTORY, "com.ibm.websphere.naming.WsnInitialContextFactory");
+            jndiProps.put(javax.naming.Context.PROVIDER_URL, "iiop://localhost:2809"); // Update host and port as needed
 
-            // Lookup the Scheduler
-            Scheduler scheduler = (Scheduler) ctx.lookup("scheduler/scheduler");
+            // Create the InitialContext
+            InitialContext ctx = new InitialContext(jndiProps);
 
-            // Create a TaskInfoImpl
-            TaskInfoImpl taskInfo = new TaskInfoImpl();
-            taskInfo.setName("exampleTask");
-            taskInfo.setStartTime(new Date(System.currentTimeMillis() + 60000)); // Schedule task to run in 1 minute
+            // Step 2: Look up the Scheduler instance
+            Scheduler scheduler = (Scheduler) ctx.lookup("scheduler/defaultScheduler");
+            java.util.Date startDate = new java.util.Date(System.currentTimeMillis() + 30000);
 
-            // Create the task
+            // Step 3: Create and configure MessageTaskInfo
+            MessageTaskInfo taskInfo = (MessageTaskInfo) scheduler.createTaskInfo(MessageTaskInfo.class);
+            taskInfo.setConnectionFactoryJndiName("jms/MyQueueConnectionFactory");
+            taskInfo.setDestinationJndiName("jms/MyQueue");
+            taskInfo.setStartTime(startDate);
+
+            // Step 4: Schedule the task
             scheduler.create(taskInfo);
+            System.out.println("JMS Message Task scheduled successfully!");
 
-            System.out.println("Task scheduled successfully.");
-
-        } catch (NamingException e) {
-            System.err.println("Error during JNDI lookup: " + e.getMessage());
+        } catch (TaskInfoInvalid e) {
+            System.err.println("Invalid TaskInfo specified: " + e.getMessage());
+            e.printStackTrace();
         } catch (Exception e) {
-            System.err.println("Error scheduling task: " + e.getMessage());
+            System.err.println("Error scheduling the task: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }
