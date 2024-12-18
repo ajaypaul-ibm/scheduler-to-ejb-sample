@@ -4,22 +4,23 @@ import com.ibm.websphere.scheduler.Scheduler;
 import com.ibm.websphere.scheduler.MessageTaskInfo;
 import com.ibm.websphere.scheduler.TaskInfoInvalid;
 
+import javax.naming.Context;
 import javax.naming.InitialContext;
 import java.util.Hashtable;
+import java.util.Properties;
 
 public class SchedulerExample {
     public static void main(String[] args) {
         try {
             // Step 1: Set up JNDI properties
-            Hashtable<String, String> jndiProps = new Hashtable<>();
-            jndiProps.put(javax.naming.Context.INITIAL_CONTEXT_FACTORY, "com.ibm.websphere.naming.WsnInitialContextFactory");
-            jndiProps.put(javax.naming.Context.PROVIDER_URL, "iiop://localhost:2809"); // Update host and port as needed
-
+        	Properties props = new Properties(); 
+        	props.put(Context.INITIAL_CONTEXT_FACTORY, "com.ibm.websphere.naming.WsnInitialContextFactory");
+        	props.put(Context.PROVIDER_URL, "iiop://localhost:2809"); // Adjust the URL to your server
             // Create the InitialContext
-            InitialContext ctx = new InitialContext(jndiProps);
+            InitialContext ctx = new InitialContext(props);
 
             // Step 2: Look up the Scheduler instance
-            Scheduler scheduler = (Scheduler) ctx.lookup("scheduler/defaultScheduler");
+            Scheduler scheduler = (Scheduler) ctx.lookup("scheduler-app");
             java.util.Date startDate = new java.util.Date(System.currentTimeMillis() + 30000);
 
             // Step 3: Create and configure MessageTaskInfo
